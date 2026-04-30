@@ -1,5 +1,8 @@
 # hanz
 ![Static Badge](https://img.shields.io/badge/License-GPL-blue)
+![Static Badge](https://github.com/OWNER/REPOSITORY/actions/workflows/guild.yml/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/kana112/hanz/badge.svg?branch=main)](https://coveralls.io/github/kana112/hanz?branch=main)
+
 
 必要ないファイルを推奨して表示するlsコマンドです．
 
