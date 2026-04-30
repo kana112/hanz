@@ -1,6 +1,6 @@
 # hanz
 ![Static Badge](https://img.shields.io/badge/License-GPL-blue)
-![example workflow](https://github.com/kana112/hanz/tree/main/.github/workflows/build.yml/badge.svg)
+![example workflow](https://github.com/kana112/hanz/actions/workflows/build.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/kana112/hanz/badge.svg?branch=main)](https://coveralls.io/github/kana112/hanz?branch=main)
 
 
