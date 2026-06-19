@@ -1,0 +1,6 @@
+baseURL = 'https://kana112.github.io/hanz/'
+title = 'hanz'
+
+[module]
+[[module.imports]]
+  path = 'github.com/alex-shpak/hugo-book'
