@@ -76,3 +76,6 @@ target/
 /docs/public/
 /docs/resources/
 /public/
+
+### Generated shell completions ###
+/completions/

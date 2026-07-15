@@ -1,49 +1,37 @@
+use std::fs::{self, File};
 use std::path::Path;
 
-#[cfg(debug_assertions)]
-mod completions {
-    use clap::{Command, CommandFactory};
-    use clap_complete::Shell;
-    use std::fs::File;
-    use std::path::Path;
+use anyhow::{Context, Result};
+use clap::CommandFactory;
+use clap_complete::{Shell, generate as generate_completion};
 
-    fn generate_impl(s: Shell, app: &mut Command, appname: &str, outdir: &Path, file: String) {
-        let destfile = outdir.join(file);
-        std::fs::create_dir_all(destfile.parent().unwrap()).unwrap();
-        if let Ok(mut dest) = File::create(destfile) {
-            clap_complete::generate(s, app, appname, &mut dest);
-        }
+use super::args::Cli;
+
+pub(crate) fn generate(output_dir: &Path) -> Result<()> {
+    let mut command = Cli::command();
+    let app_name = "hanz";
+
+    for (shell, file_name) in [
+        (Shell::Bash, "bash/hanz"),
+        (Shell::Elvish, "elvish/hanz"),
+        (Shell::Fish, "fish/hanz"),
+        (Shell::PowerShell, "powershell/hanz"),
+        (Shell::Zsh, "zsh/_hanz"),
+    ] {
+        let destination = output_dir.join(file_name);
+        let parent = destination
+            .parent()
+            .context("補完ファイルの親ディレクトリを解決できません")?;
+        fs::create_dir_all(parent).with_context(|| {
+            format!(
+                "補完ファイルのディレクトリを作成できません: {}",
+                parent.display()
+            )
+        })?;
+        let mut file = File::create(&destination)
+            .with_context(|| format!("補完ファイルを作成できません: {}", destination.display()))?;
+        generate_completion(shell, &mut command, app_name, &mut file);
     }
 
-    pub(super) fn generate(outdir: &Path) {
-        use Shell::{Bash, Elvish, Fish, PowerShell, Zsh};
-        let appname = "lis";
-
-        let mut app = crate::Args::command();
-        app.set_bin_name(appname);
-
-        generate_impl(Bash, &mut app, appname, outdir, format!("bash/{appname}"));
-        generate_impl(
-            Elvish,
-            &mut app,
-            appname,
-            outdir,
-            format!("elvish/{appname}"),
-        );
-        generate_impl(Fish, &mut app, appname, outdir, format!("fish/{appname}"));
-        generate_impl(
-            PowerShell,
-            &mut app,
-            appname,
-            outdir,
-            format!("powershell/{appname}"),
-        );
-        generate_impl(Zsh, &mut app, appname, outdir, format!("zsh/_{appname}"));
-    }
-}
-
-#[allow(dead_code, unused_variables)]
-pub(crate) fn generate(outdir: &Path) {
-    #[cfg(debug_assertions)]
-    completions::generate(outdir);
+    Ok(())
 }

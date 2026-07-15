@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 
 use hanz::RunConfig;
@@ -12,19 +13,29 @@ use hanz::RunConfig;
 )]
 pub(crate) struct Cli {
     #[arg(value_name = "DIRECTORY")]
-    root: PathBuf,
-    #[arg(long, required_unless_present = "hash")]
+    root: Option<PathBuf>,
+    #[arg(long)]
     name: bool,
-    #[arg(long, required_unless_present = "name")]
+    #[arg(long)]
     hash: bool,
     #[arg(long, value_name = "DIR")]
     collect: Option<PathBuf>,
-    #[arg(long, default_value_t = false)]
-    completions: bool
+    #[arg(long)]
+    completions: bool,
 }
 
 impl Cli {
-    pub(crate) fn into_config(self) -> RunConfig {
-        RunConfig::new(self.root, self.name, self.hash, self.collect)
+    pub(crate) fn completions(&self) -> bool {
+        self.completions
+    }
+
+    pub(crate) fn into_config(self) -> Result<RunConfig> {
+        if !self.name && !self.hash {
+            bail!("--name または --hash を指定してください");
+        }
+        let root = self
+            .root
+            .context("探索対象ディレクトリを指定してください")?;
+        Ok(RunConfig::new(root, self.name, self.hash, self.collect))
     }
 }

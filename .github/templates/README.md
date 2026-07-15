@@ -4,7 +4,7 @@
 ![example workflow](https://github.com/kana112/hanz/actions/workflows/build.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/kana112/hanz/badge.svg?branch=main)](https://coveralls.io/github/kana112/hanz?branch=main)
 
-Version: 0.1.0
+Version: ${VERSION}
 
 `hanz` は、指定したディレクトリ内から「不要かもしれないファイル」を検出して表示する CLI ツールです。
 ファイルの削除、移動、コピーは行いません。

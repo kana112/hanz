@@ -114,3 +114,21 @@ fn missing_detection_mode_is_a_cli_error() {
     assert!(stderr.contains("--name"));
     assert!(stderr.contains("--hash"));
 }
+
+#[test]
+fn completions_option_generates_shell_files() {
+    let root = TestDirectory::new("completions");
+    let output = Command::new(env!("CARGO_BIN_EXE_hanz"))
+        .current_dir(&root.0)
+        .arg("--completions")
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    assert!(root.0.join("completions/bash/hanz").is_file());
+    assert!(root.0.join("completions/zsh/_hanz").is_file());
+    assert!(root.0.join("completions/fish/hanz").is_file());
+    let bash = fs::read_to_string(root.0.join("completions/bash/hanz")).unwrap();
+    assert!(bash.contains("--name"));
+    assert!(bash.contains("--hash"));
+    assert!(bash.contains("--collect"));
+}
