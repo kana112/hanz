@@ -19,6 +19,8 @@ pub(crate) struct Cli {
     hash: bool,
     #[arg(long, value_name = "DIR")]
     collect: Option<PathBuf>,
+    #[arg(long, default_value_t = false)]
+    completions: bool
 }
 
 impl Cli {
