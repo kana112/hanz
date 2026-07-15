@@ -1,9 +1,8 @@
-use std::io::{self, Write};
 use std::path::PathBuf;
 
-use anyhow::Result;
 use clap::Parser;
-use hanz::{RunConfig, run};
+
+use hanz::RunConfig;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -11,7 +10,7 @@ use hanz::{RunConfig, run};
     version,
     about = "指定したディレクトリ配下から不要そうなファイルを表示します"
 )]
-struct Cli {
+pub(crate) struct Cli {
     #[arg(value_name = "DIRECTORY")]
     root: PathBuf,
     #[arg(long, required_unless_present = "hash")]
@@ -22,13 +21,8 @@ struct Cli {
     collect: Option<PathBuf>,
 }
 
-fn main() -> Result<()> {
-    let cli = Cli::parse();
-    let output = run(RunConfig::new(cli.root, cli.name, cli.hash, cli.collect))?;
-    write_output(&output)
-}
-
-fn write_output(output: &str) -> Result<()> {
-    io::stdout().lock().write_all(output.as_bytes())?;
-    Ok(())
+impl Cli {
+    pub(crate) fn into_config(self) -> RunConfig {
+        RunConfig::new(self.root, self.name, self.hash, self.collect)
+    }
 }

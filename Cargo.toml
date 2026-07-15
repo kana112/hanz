@@ -5,10 +5,11 @@ edition = "2024"
 
 [[bin]]
 name = "hanz"
-path = "src/main.rs"
+path = "cli/main.rs"
 
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
+clap_complete = "4.6.7"
 sha2 = "0.10"
 walkdir = "2.5"
