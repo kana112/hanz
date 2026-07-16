@@ -79,3 +79,6 @@ target/
 
 ### Generated shell completions ###
 /completions/
+
+### Distribution archives ###
+/dist/
