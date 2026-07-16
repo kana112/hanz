@@ -12,7 +12,7 @@ use hanz::RunConfig;
     about = "指定したディレクトリ配下から不要そうなファイルを表示します"
 )]
 pub(crate) struct Cli {
-    #[arg(value_name = "DIRECTORY")]
+    #[arg(value_name = "DIRECTORY", required_unless_present = "completions")]
     root: Option<PathBuf>,
     #[arg(long)]
     name: bool,

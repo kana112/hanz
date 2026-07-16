@@ -107,6 +107,20 @@ fn missing_detection_mode_is_a_cli_error() {
 }
 
 #[test]
+fn directory_is_required_as_the_first_positional_argument() {
+    let output = Command::new(env!("CARGO_BIN_EXE_hanz"))
+        .arg("--name")
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("DIRECTORY")
+    );
+}
+
+#[test]
 fn collect_option_is_rejected() {
     let root = TestDirectory::new("removed-collect");
     let output = Command::new(env!("CARGO_BIN_EXE_hanz"))
