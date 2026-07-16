@@ -2,6 +2,7 @@
 
 ![Static Badge](https://img.shields.io/badge/License-GPL-blue)
 ![example workflow](https://github.com/kana112/hanz/actions/workflows/build.yml/badge.svg)
+[![DOI](https://zenodo.org/badge/1206547447.svg)](https://doi.org/10.5281/zenodo.21378519)
 [![Coverage Status](https://coveralls.io/repos/github/kana112/hanz/badge.svg?branch=main)](https://coveralls.io/github/kana112/hanz?branch=main)
 
 Version: ${VERSION}
