@@ -3,7 +3,8 @@ mod name;
 
 use anyhow::Result;
 
-use crate::candidate::Candidate;
+use crate::candidate::{Candidate, CandidateKind};
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct DetectionOptions {
@@ -12,7 +13,8 @@ pub(crate) struct DetectionOptions {
 }
 
 pub(crate) fn detect_candidates(
-    files: &[std::path::PathBuf],
+    files: &[PathBuf],
+    directories: &[PathBuf],
     options: DetectionOptions,
 ) -> Result<Vec<Candidate>> {
     let mut candidates = Vec::new();
@@ -20,7 +22,18 @@ pub(crate) fn detect_candidates(
         candidates.extend(name::detect_by_name(files));
     }
     if options.by_hash {
-        candidates.extend(hash::detect_by_hash(files)?);
+        let hash_candidates = hash::detect_by_hash(files, directories)?;
+        let duplicate_directories = hash_candidates
+            .iter()
+            .filter(|candidate| candidate.kind == CandidateKind::DirectoryHash)
+            .map(|candidate| candidate.path.as_path())
+            .collect::<Vec<_>>();
+        candidates.retain(|candidate| {
+            !duplicate_directories
+                .iter()
+                .any(|directory| candidate.path.starts_with(directory))
+        });
+        candidates.extend(hash_candidates);
     }
     Ok(candidates)
 }

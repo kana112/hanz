@@ -12,8 +12,9 @@ use anyhow::Result;
 pub fn run(config: RunConfig) -> Result<RunResult> {
     config.validate()?;
 
-    let files = scanner::scan_files_excluding(config.root(), config.output_dir())?;
-    let candidates = detector::detect_candidates(&files, config.detection_options())?;
+    let scan = scanner::scan_entries_excluding(config.root(), config.output_dir())?;
+    let candidates =
+        detector::detect_candidates(&scan.files, &scan.directories, config.detection_options())?;
     let collection = config
         .output_dir()
         .map(|output_dir| collector::collect_links(&candidates, output_dir))

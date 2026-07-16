@@ -78,6 +78,61 @@ fn hash_detection_finds_identical_files() {
 }
 
 #[test]
+fn hash_detection_reports_duplicate_directories_without_nested_files() {
+    let root = TestDirectory::new("directory-hash");
+    root.file("backup-a/nested/report.txt", "same");
+    root.file("backup-b/nested/report.txt", "same");
+    let output = Command::new(env!("CARGO_BIN_EXE_hanz"))
+        .arg(&root.0)
+        .arg("--hash")
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("DIR_HASH  "));
+    assert!(!stdout.lines().any(|line| line.starts_with("HASH  ")));
+    assert!(!stdout.contains("report.txt"));
+}
+
+#[test]
+fn collect_creates_links_to_duplicate_directories() {
+    let root = TestDirectory::new("collect-directories");
+    let first = root.file("backup-a/report.txt", "same");
+    let second = root.file("backup-b/report.txt", "same");
+    let output_dir = root.0.join("collected");
+    let output = Command::new(env!("CARGO_BIN_EXE_hanz"))
+        .arg(&root.0)
+        .arg("--hash")
+        .arg("--collect")
+        .arg(&output_dir)
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("DIR_HASH  "));
+    assert!(
+        fs::symlink_metadata(output_dir.join("backup-a"))
+            .unwrap()
+            .file_type()
+            .is_symlink()
+    );
+    assert!(
+        fs::symlink_metadata(output_dir.join("backup-b"))
+            .unwrap()
+            .file_type()
+            .is_symlink()
+    );
+    assert_eq!(
+        fs::canonicalize(output_dir.join("backup-a")).unwrap(),
+        fs::canonicalize(first.parent().unwrap()).unwrap()
+    );
+    assert_eq!(
+        fs::canonicalize(output_dir.join("backup-b")).unwrap(),
+        fs::canonicalize(second.parent().unwrap()).unwrap()
+    );
+}
+
+#[test]
 fn collect_creates_candidate_links() {
     let root = TestDirectory::new("collect");
     let source = root.file("report (1).pdf", "content");

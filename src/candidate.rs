@@ -11,6 +11,7 @@ pub struct Candidate {
 pub enum CandidateKind {
     Name,
     Hash,
+    DirectoryHash,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

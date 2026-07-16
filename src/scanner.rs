@@ -13,12 +13,21 @@ pub(crate) fn scan_files(root: &Path) -> Result<Vec<PathBuf>> {
 }
 
 pub(crate) fn scan_files_excluding(root: &Path, output_dir: Option<&Path>) -> Result<Vec<PathBuf>> {
+    scan_entries_excluding(root, output_dir).map(|result| result.files)
+}
+
+pub(crate) struct ScanResult {
+    pub(crate) files: Vec<PathBuf>,
+    pub(crate) directories: Vec<PathBuf>,
+}
+
+pub(crate) fn scan_entries_excluding(root: &Path, output_dir: Option<&Path>) -> Result<ScanResult> {
     let output_dir = canonical_existing_path(output_dir);
     let walker = WalkDir::new(root)
         .follow_links(false)
         .into_iter()
         .filter_entry(|entry| should_visit(entry, output_dir.as_deref()));
-    collect_regular_files(walker, root)
+    collect_entries(walker, root)
 }
 
 fn canonical_existing_path(path: Option<&Path>) -> Option<PathBuf> {
@@ -43,24 +52,24 @@ fn is_excluded_directory(entry: &DirEntry) -> bool {
             .any(|name| entry.file_name() == OsStr::new(name))
 }
 
-fn collect_regular_files(
+fn collect_entries(
     walker: impl Iterator<Item = walkdir::Result<DirEntry>>,
     root: &Path,
-) -> Result<Vec<PathBuf>> {
-    let mut files = walker
-        .map(|entry| checked_file_path(entry, root))
-        .collect::<Result<Vec<_>>>()?
-        .into_iter()
-        .flatten()
-        .collect::<Vec<_>>();
+) -> Result<ScanResult> {
+    let mut files = Vec::new();
+    let mut directories = Vec::new();
+    for entry in walker {
+        let entry =
+            entry.with_context(|| format!("ディレクトリを探索できません: {}", root.display()))?;
+        if entry.file_type().is_file() {
+            files.push(entry.into_path());
+        } else if entry.depth() > 0 && entry.file_type().is_dir() {
+            directories.push(entry.into_path());
+        }
+    }
     files.sort();
-    Ok(files)
-}
-
-fn checked_file_path(entry: walkdir::Result<DirEntry>, root: &Path) -> Result<Option<PathBuf>> {
-    let entry =
-        entry.with_context(|| format!("ディレクトリを探索できません: {}", root.display()))?;
-    Ok(entry.file_type().is_file().then_some(entry.into_path()))
+    directories.sort();
+    Ok(ScanResult { files, directories })
 }
 
 #[cfg(test)]

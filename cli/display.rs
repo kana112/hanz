@@ -5,6 +5,7 @@ use hanz::{Candidate, CandidateKind, RunResult};
 
 const NAME_LABEL: &str = "NAME";
 const HASH_LABEL: &str = "HASH";
+const DIRECTORY_HASH_LABEL: &str = "DIR_HASH";
 
 pub(super) fn write_result(result: &RunResult) -> Result<()> {
     let output = format_run_output(result);
@@ -54,6 +55,7 @@ fn candidate_label(kind: CandidateKind) -> &'static str {
     match kind {
         CandidateKind::Name => NAME_LABEL,
         CandidateKind::Hash => HASH_LABEL,
+        CandidateKind::DirectoryHash => DIRECTORY_HASH_LABEL,
     }
 }
 
@@ -107,5 +109,21 @@ mod tests {
         };
         let output = format_run_output(&result);
         assert!(output.contains("COLLECT  1 candidate link(s) in .junk-links"));
+    }
+
+    #[test]
+    fn directory_hash_output_contains_directory_label() {
+        let result = RunResult {
+            candidates: vec![candidate(
+                CandidateKind::DirectoryHash,
+                "backup-a",
+                "duplicate of: backup-b\nsha256: digest",
+            )],
+            collection: None,
+        };
+        let output = format_run_output(&result);
+        assert!(output.contains("DIR_HASH  backup-a"));
+        assert!(output.contains("      duplicate of: backup-b"));
+        assert!(output.contains("      sha256: digest"));
     }
 }
