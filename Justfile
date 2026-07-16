@@ -21,7 +21,7 @@ container-local:
         --build-arg GIT_REVISION={{git_revision}} \
         --build-arg BUILD_DATE={{build_date}} \
         --build-arg VERSION={{app_version}} \
-        -t ghcr.io/kana112/hanz:latest -t ghcr.io/kana112/hanz:{{ app_version }} \
+        -t docker.io/kana112/hanz:latest -t docker.io/kana112/hanz:{{ app_version }} \
         -f Containerfile \
         .
 
@@ -31,6 +31,6 @@ container:
         --build-arg GIT_REVISION={{git_revision}} \
         --build-arg BUILD_DATE={{build_date}} \
         --build-arg VERSION={{ app_version }} \
-        -t ghcr.io/kana112/hanz:latest -t ghcr.io/kana112/hanz:{{ app_version }} \
+        -t docker.io/kana112/hanz:latest -t docker.io/kana112/hanz:{{ app_version }} \
         -f Containerfile \
         .
