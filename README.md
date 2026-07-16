@@ -5,12 +5,10 @@
 [![DOI](https://zenodo.org/badge/1206547447.svg)](https://doi.org/10.5281/zenodo.21378519)
 [![Coverage Status](https://coveralls.io/repos/github/kana112/hanz/badge.svg?branch=main)](https://coveralls.io/github/kana112/hanz?branch=main)
 
-Version: 0.1.1
+Version: 0.1.2
 
 `hanz` は、指定したディレクトリ内から「不要かもしれないファイル」を検出して表示する CLI ツールです。
-
-## ⚠️警告
-現在バージョン0.1.0とバージョン0.1.1の--collectにデータを削除してしまう可能性のあるバグがあります．使用しないようにしてください．
+ファイルの削除、移動、コピーは行いません。
 
 ## 機能
 
