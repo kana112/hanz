@@ -7,38 +7,55 @@ description: 不要かもしれないファイルを削除せずに見つける 
 
 ![Static Badge](https://img.shields.io/badge/License-GPL-blue)
 ![example workflow](https://github.com/kana112/hanz/actions/workflows/build.yml/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/kana112/hanz/badge.svg?branch=main)](https://coveralls.io/github/kana112/hanz?branch=main)
 [![DOI](https://zenodo.org/badge/1206547447.svg)](https://doi.org/10.5281/zenodo.21378519)
+[![Coverage Status](https://coveralls.io/repos/github/kana112/hanz/badge.svg?branch=main)](https://coveralls.io/github/kana112/hanz?branch=main)
 
-`hanz` は、ディレクトリの中から「不要かもしれないファイル」を見つけるための小さな CLI ツールです。
-重複っぽいファイル名や、内容が完全に同じファイルを検出します。
+Version: 0.1.2
 
-> [!NOTE]
-> `hanz` は検出結果を表示するだけです。ファイルの削除、移動、コピーは行いません。
+`hanz` は、指定したディレクトリ内から「不要かもしれないファイル」を検出して表示する CLI ツールです。
 
-## できること
+## インストール
 
-| モード | 概要 |
-| --- | --- |
-| `--name` | `copy`、`コピー`、` (1)` など、重複ファイルらしい名前を検出します。 |
-| `--hash` | SHA-256 が一致する完全重複ファイルや、内容・構成が同じディレクトリを検出します。 |
-
-探索対象は指定したディレクトリ配下だけです。
-`.git`、`target`、`node_modules`、`.junk-links` は自動で除外されます。
-
-## はじめる
-
-リポジトリを取得して、Rust の標準ツールチェーンでビルドできます。
+### Homebrew
 
 ```bash
-git clone https://github.com/kana112/hanz.git
-cd hanz
+brew tap kana112/hanz
+brew install hanz
+```
+
+### Docker
+
+Docker Hubのイメージを取得します。
+
+```bash
+docker pull docker.io/kana112/hanz:latest
+```
+
+Downloadsを読み取り専用でコンテナに渡して検出します。
+
+```bash
+docker run --rm \
+  -v "$HOME/Downloads:/data:ro" \
+  docker.io/kana112/hanz:latest \
+  /data --name --hash
+```
+
+## 機能
+
+- 指定したディレクトリ配下だけを探索
+- 重複らしいファイル名を `--name` で検出
+- SHA-256 が一致する完全重複ファイルや、内容・構成が同じディレクトリを `--hash` で検出
+- シンボリックリンクや特殊ファイルをスキップ
+
+## ビルド
+
+```bash
 cargo build --release
 ```
 
-ビルド後の実行ファイルは `target/release/hanz` に作成されます。
+実行ファイルは `target/release/hanz` に作成されます。
 
-## 基本の使い方
+## 使い方
 
 名前から候補を検出します。
 
@@ -79,20 +96,18 @@ DIR_HASH  ./Downloads/backup-a
 
 `--name` は、ファイル名に `コピー`、` copy`、` Copy`、` (数字)` が含まれる場合や、拡張子直前が ` 2` 以上の数字で終わる場合に候補とします。
 
-`--hash` は、まずファイルサイズなどで候補を絞り込みます。同じサイズのファイルが2つ以上あるグループだけをバッファ読み込みで SHA-256 計算し、ハッシュが一致したファイルを候補とします。
+`--hash` は、まずファイルサイズなどで候補を絞り込みます。同じサイズのファイルが2つ以上あるグループだけをSHA-256 計算し、ハッシュが一致したファイルを候補とします。
 
 ディレクトリは、配下の相対パス・ファイルサイズ・各ファイルの SHA-256 から内容と構成を比較します。同一ディレクトリが見つかった場合は `DIR_HASH` としてディレクトリを表示し、その配下のファイル候補は重複して表示しません。
 
-## 安全性
 
-- ファイル候補は通常ファイルを対象にし、ディレクトリは内容比較の対象にします。
-- シンボリックリンクや特殊ファイルはスキップします。
-- `--name`と`--hash`は、探索対象を読み取って候補を表示するだけです。
-- 探索対象や候補ファイルの内容は変更しません。
-
-## 開発
+## テスト
 
 ```bash
 cargo test --all-targets --all-features
 cargo clippy --all-targets --all-features -- -D warnings
 ```
+
+## ライセンス
+
+`hanz`はGPL-3.0-onlyで公開されています。詳細は[LICENSE](https://github.com/kana112/hanz/blob/main/LICENSE)を参照してください。
