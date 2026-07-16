@@ -14,6 +14,32 @@ Version: 0.1.2
 
 `hanz` は、指定したディレクトリ内から「不要かもしれないファイル」を検出して表示する CLI ツールです。
 
+## インストール
+
+### Homebrew
+
+```bash
+brew tap kana112/hanz
+brew install hanz
+```
+
+### Docker
+
+Docker Hubのイメージを取得します。
+
+```bash
+docker pull docker.io/kana112/hanz:latest
+```
+
+Downloadsを読み取り専用でコンテナに渡して検出します。
+
+```bash
+docker run --rm \
+  -v "$HOME/Downloads:/data:ro" \
+  docker.io/kana112/hanz:latest \
+  /data --name --hash
+```
+
 ## 機能
 
 - 指定したディレクトリ配下だけを再帰的に探索
@@ -81,3 +107,7 @@ DIR_HASH  ./Downloads/backup-a
 cargo test --all-targets --all-features
 cargo clippy --all-targets --all-features -- -D warnings
 ```
+
+## ライセンス
+
+`hanz`はGPL-3.0-onlyで公開されています。詳細は[LICENSE](https://github.com/kana112/hanz/blob/main/LICENSE)を参照してください。
