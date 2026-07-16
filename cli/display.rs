@@ -36,19 +36,7 @@ fn format_candidate(candidate: &Candidate) -> String {
 }
 
 fn format_run_output(result: &RunResult) -> String {
-    let mut output = format_candidates(&result.candidates);
-    if let Some(collection) = &result.collection {
-        append_collection_summary(&mut output, collection);
-    }
-    output
-}
-
-fn append_collection_summary(output: &mut String, collection: &hanz::CollectionResult) {
-    output.push_str(&format!(
-        "COLLECT  {} candidate link(s) in {}\n",
-        collection.link_count,
-        collection.output_dir.display()
-    ));
+    format_candidates(&result.candidates)
 }
 
 fn candidate_label(kind: CandidateKind) -> &'static str {
@@ -64,8 +52,6 @@ mod tests {
     use std::path::PathBuf;
 
     use super::*;
-    use hanz::CollectionResult;
-
     fn candidate(kind: CandidateKind, path: &str, reason: &str) -> Candidate {
         Candidate {
             path: PathBuf::from(path),
@@ -78,7 +64,6 @@ mod tests {
     fn empty_candidate_output_is_explicit() {
         let result = RunResult {
             candidates: Vec::new(),
-            collection: None,
         };
         assert_eq!(format_run_output(&result), "No candidates found.\n");
     }
@@ -91,24 +76,10 @@ mod tests {
                 "report (1).pdf",
                 "reason: duplicate-like filename",
             )],
-            collection: None,
         };
         let output = format_run_output(&result);
         assert!(output.contains("NAME  report (1).pdf"));
         assert!(output.contains("      reason: duplicate-like filename"));
-    }
-
-    #[test]
-    fn collection_output_contains_summary() {
-        let result = RunResult {
-            candidates: vec![candidate(CandidateKind::Name, "source.txt", "reason")],
-            collection: Some(CollectionResult {
-                output_dir: PathBuf::from(".junk-links"),
-                link_count: 1,
-            }),
-        };
-        let output = format_run_output(&result);
-        assert!(output.contains("COLLECT  1 candidate link(s) in .junk-links"));
     }
 
     #[test]
@@ -119,7 +90,6 @@ mod tests {
                 "backup-a",
                 "duplicate of: backup-b\nsha256: digest",
             )],
-            collection: None,
         };
         let output = format_run_output(&result);
         assert!(output.contains("DIR_HASH  backup-a"));

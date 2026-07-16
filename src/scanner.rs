@@ -1,5 +1,4 @@
 use std::ffi::OsStr;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
@@ -9,11 +8,7 @@ const EXCLUDED_DIRECTORIES: [&str; 4] = [".git", "target", "node_modules", ".jun
 
 #[allow(dead_code)]
 pub(crate) fn scan_files(root: &Path) -> Result<Vec<PathBuf>> {
-    scan_files_excluding(root, None)
-}
-
-pub(crate) fn scan_files_excluding(root: &Path, output_dir: Option<&Path>) -> Result<Vec<PathBuf>> {
-    scan_entries_excluding(root, output_dir).map(|result| result.files)
+    scan_entries(root).map(|result| result.files)
 }
 
 pub(crate) struct ScanResult {
@@ -21,28 +16,16 @@ pub(crate) struct ScanResult {
     pub(crate) directories: Vec<PathBuf>,
 }
 
-pub(crate) fn scan_entries_excluding(root: &Path, output_dir: Option<&Path>) -> Result<ScanResult> {
-    let output_dir = canonical_existing_path(output_dir);
+pub(crate) fn scan_entries(root: &Path) -> Result<ScanResult> {
     let walker = WalkDir::new(root)
         .follow_links(false)
         .into_iter()
-        .filter_entry(|entry| should_visit(entry, output_dir.as_deref()));
+        .filter_entry(should_visit);
     collect_entries(walker, root)
 }
 
-fn canonical_existing_path(path: Option<&Path>) -> Option<PathBuf> {
-    path.and_then(|path| fs::canonicalize(path).ok())
-}
-
-fn should_visit(entry: &DirEntry, output_dir: Option<&Path>) -> bool {
-    entry.depth() == 0
-        || (!is_excluded_directory(entry) && !is_collection_directory(entry, output_dir))
-}
-
-fn is_collection_directory(entry: &DirEntry, output_dir: Option<&Path>) -> bool {
-    entry.file_type().is_dir()
-        && output_dir
-            .is_some_and(|output| fs::canonicalize(entry.path()).is_ok_and(|path| path == output))
+fn should_visit(entry: &DirEntry) -> bool {
+    entry.depth() == 0 || !is_excluded_directory(entry)
 }
 
 fn is_excluded_directory(entry: &DirEntry) -> bool {
@@ -144,32 +127,12 @@ mod tests {
         let file = root.file("file.txt", "content");
         let link = root.0.join("directory-link");
         std::os::unix::fs::symlink(&root.0, &link).unwrap();
+        assert!(crate::RunConfig::new(file, true, false).validate().is_err());
+        assert!(crate::RunConfig::new(link, true, false).validate().is_err());
         assert!(
-            crate::RunConfig::new(file, true, false, None)
+            crate::RunConfig::new(root.0.join("missing"), true, false)
                 .validate()
                 .is_err()
-        );
-        assert!(
-            crate::RunConfig::new(link, true, false, None)
-                .validate()
-                .is_err()
-        );
-        assert!(
-            crate::RunConfig::new(root.0.join("missing"), true, false, None)
-                .validate()
-                .is_err()
-        );
-    }
-
-    #[test]
-    fn scan_excludes_custom_collection_directory() {
-        let root = TestDirectory::new("custom-output");
-        let kept = root.file("kept.txt", "kept");
-        let output = root.0.join("collected");
-        root.file("collected/ignored.txt", "ignored");
-        assert_eq!(
-            scan_files_excluding(&root.0, Some(&output)).unwrap(),
-            vec![kept]
         );
     }
 }
