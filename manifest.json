@@ -1,0 +1,15 @@
+{
+  "name": "hanz",
+  "short_name": "hanz",
+  "start_url": "/hanz/",
+  "scope": "/hanz/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/hanz/favicon.svg",
+      "sizes": "512x512"
+    }
+  ]
+}
