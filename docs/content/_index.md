@@ -43,19 +43,19 @@ cargo build --release
 名前から候補を検出します。
 
 ```bash
-cargo run -- ./Downloads --name
+hanz ./Downloads --name
 ```
 
 完全重複ファイルを検出します。
 
 ```bash
-cargo run -- ./Downloads --hash
+hanz ./Downloads --hash
 ```
 
 両方の方法で検出します。
 
 ```bash
-cargo run -- ./Downloads --name --hash
+hanz ./Downloads --name --hash
 ```
 
 ## 出力例
