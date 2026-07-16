@@ -1,10 +1,9 @@
 mod candidate;
-mod collector;
 mod config;
 mod detector;
 mod scanner;
 
-pub use candidate::{Candidate, CandidateKind, CollectionResult, RunResult};
+pub use candidate::{Candidate, CandidateKind, RunResult};
 pub use config::RunConfig;
 
 use anyhow::Result;
@@ -12,15 +11,11 @@ use anyhow::Result;
 pub fn run(config: RunConfig) -> Result<RunResult> {
     config.validate()?;
 
-    let scan = scanner::scan_entries_excluding(config.root(), config.output_dir())?;
+    let scan = scanner::scan_entries(config.root())?;
     let candidates =
         detector::detect_candidates(&scan.files, &scan.directories, config.detection_options())?;
-    let collection = config
-        .output_dir()
-        .map(|output_dir| collector::collect_links(&candidates, output_dir))
-        .transpose()?;
 
-    Ok(RunResult::new(candidates, collection))
+    Ok(RunResult::new(candidates))
 }
 
 #[cfg(test)]
@@ -62,40 +57,30 @@ mod tests {
     }
 
     #[test]
-    fn run_returns_structured_result_and_creates_links() {
-        let root = TestDirectory::new("collect");
-        root.file("report (1).pdf", "content");
-        let output = root.0.join(".junk-links");
-        let config = RunConfig::new(root.0.clone(), true, false, Some(output.clone()));
-        let result = run(config).unwrap();
-        assert_eq!(result.candidates.len(), 1);
-        assert_eq!(result.collection.as_ref().unwrap().link_count, 1);
-        assert!(output.join("report (1).pdf").exists());
-        assert!(
-            fs::symlink_metadata(output.join("report (1).pdf"))
-                .unwrap()
-                .file_type()
-                .is_symlink()
-        );
-    }
-
-    #[test]
-    fn run_excludes_custom_collection_directory() {
-        let root = TestDirectory::new("custom-output");
-        let output = root.0.join("collected");
-        root.file("collected/old (1).txt", "old");
-        let config = RunConfig::new(root.0.clone(), true, false, Some(output.clone()));
-        let result = run(config).unwrap();
-        assert!(result.candidates.is_empty());
-        assert_eq!(result.collection.as_ref().unwrap().link_count, 0);
-        assert!(fs::read_dir(output).unwrap().next().is_none());
-    }
-
-    #[test]
     fn run_requires_a_detection_mode() {
         let root = TestDirectory::new("mode");
-        let config = RunConfig::new(root.0.clone(), false, false, None);
+        let config = RunConfig::new(root.0.clone(), false, false);
         let error = run(config).unwrap_err().to_string();
         assert_eq!(error, "少なくとも1つの検出方法を有効にしてください");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_succeeds_without_write_permission() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let root = TestDirectory::new("read-only");
+        let candidate = root.file("report (1).pdf", "content");
+        fs::set_permissions(&candidate, fs::Permissions::from_mode(0o444)).unwrap();
+        fs::set_permissions(&root.0, fs::Permissions::from_mode(0o555)).unwrap();
+
+        let result = run(RunConfig::new(root.0.clone(), true, false));
+
+        fs::set_permissions(&root.0, fs::Permissions::from_mode(0o755)).unwrap();
+        fs::set_permissions(&candidate, fs::Permissions::from_mode(0o644)).unwrap();
+
+        let result = result.unwrap();
+        assert_eq!(result.candidates.len(), 1);
+        assert_eq!(result.candidates[0].path, candidate);
     }
 }

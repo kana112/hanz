@@ -1,4 +1,6 @@
 use std::fs;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -95,72 +97,6 @@ fn hash_detection_reports_duplicate_directories_without_nested_files() {
 }
 
 #[test]
-fn collect_creates_links_to_duplicate_directories() {
-    let root = TestDirectory::new("collect-directories");
-    let first = root.file("backup-a/report.txt", "same");
-    let second = root.file("backup-b/report.txt", "same");
-    let output_dir = root.0.join("collected");
-    let output = Command::new(env!("CARGO_BIN_EXE_hanz"))
-        .arg(&root.0)
-        .arg("--hash")
-        .arg("--collect")
-        .arg(&output_dir)
-        .output()
-        .unwrap();
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("DIR_HASH  "));
-    assert!(
-        fs::symlink_metadata(output_dir.join("backup-a"))
-            .unwrap()
-            .file_type()
-            .is_symlink()
-    );
-    assert!(
-        fs::symlink_metadata(output_dir.join("backup-b"))
-            .unwrap()
-            .file_type()
-            .is_symlink()
-    );
-    assert_eq!(
-        fs::canonicalize(output_dir.join("backup-a")).unwrap(),
-        fs::canonicalize(first.parent().unwrap()).unwrap()
-    );
-    assert_eq!(
-        fs::canonicalize(output_dir.join("backup-b")).unwrap(),
-        fs::canonicalize(second.parent().unwrap()).unwrap()
-    );
-}
-
-#[test]
-fn collect_creates_candidate_links() {
-    let root = TestDirectory::new("collect");
-    let source = root.file("report (1).pdf", "content");
-    let output_dir = root.0.join("collected");
-    let output = Command::new(env!("CARGO_BIN_EXE_hanz"))
-        .arg(&root.0)
-        .arg("--name")
-        .arg("--collect")
-        .arg(&output_dir)
-        .output()
-        .unwrap();
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("COLLECT  1 candidate link(s)"));
-    let link = output_dir.join("report (1).pdf");
-    assert!(
-        fs::symlink_metadata(&link)
-            .unwrap()
-            .file_type()
-            .is_symlink()
-    );
-    assert_eq!(
-        fs::canonicalize(link).unwrap(),
-        fs::canonicalize(source).unwrap()
-    );
-}
-
-#[test]
 fn missing_detection_mode_is_a_cli_error() {
     let root = TestDirectory::new("missing-mode");
     let output = run_cli(&[root.0.as_path()]);
@@ -168,6 +104,24 @@ fn missing_detection_mode_is_a_cli_error() {
     let stderr = String::from_utf8(output.stderr).unwrap();
     assert!(stderr.contains("--name"));
     assert!(stderr.contains("--hash"));
+}
+
+#[test]
+fn collect_option_is_rejected() {
+    let root = TestDirectory::new("removed-collect");
+    let output = Command::new(env!("CARGO_BIN_EXE_hanz"))
+        .arg(&root.0)
+        .arg("--name")
+        .arg("--collect")
+        .arg(root.0.join("links"))
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("unexpected argument '--collect'")
+    );
 }
 
 #[test]
@@ -185,5 +139,25 @@ fn completions_option_generates_shell_files() {
     let bash = fs::read_to_string(root.0.join("completions/bash/hanz")).unwrap();
     assert!(bash.contains("--name"));
     assert!(bash.contains("--hash"));
-    assert!(bash.contains("--collect"));
+}
+
+#[cfg(unix)]
+#[test]
+fn name_detection_works_in_a_read_only_directory() {
+    let root = TestDirectory::new("read-only");
+    let candidate = root.file("report (1).pdf", "content");
+    fs::set_permissions(&candidate, fs::Permissions::from_mode(0o444)).unwrap();
+    fs::set_permissions(&root.0, fs::Permissions::from_mode(0o555)).unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_hanz"))
+        .arg(&root.0)
+        .arg("--name")
+        .output();
+
+    fs::set_permissions(&root.0, fs::Permissions::from_mode(0o755)).unwrap();
+    fs::set_permissions(&candidate, fs::Permissions::from_mode(0o644)).unwrap();
+
+    let output = output.unwrap();
+    assert!(output.status.success());
+    assert!(String::from_utf8(output.stdout).unwrap().contains("NAME  "));
 }

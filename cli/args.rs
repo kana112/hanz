@@ -18,8 +18,6 @@ pub(crate) struct Cli {
     name: bool,
     #[arg(long)]
     hash: bool,
-    #[arg(long, value_name = "DIR")]
-    collect: Option<PathBuf>,
     #[arg(long)]
     completions: bool,
 }
@@ -36,6 +34,6 @@ impl Cli {
         let root = self
             .root
             .context("探索対象ディレクトリを指定してください")?;
-        Ok(RunConfig::new(root, self.name, self.hash, self.collect))
+        Ok(RunConfig::new(root, self.name, self.hash))
     }
 }
